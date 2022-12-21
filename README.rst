@@ -1,6 +1,24 @@
 ``pypcd``
 =========
 
+说明
+-----
+该项目进行了python3代码改造
+
+在一些做了修改和删除的地方均做了fangchenyu前缀的注释说明，主要修改点如下：
+
+- StringIO：python2到python3的转化
+- 更改一些字符串前缀，b''。python3.x里默认的str是(py2.x里的)unicode, bytes是(py2.x)的str, b”“前缀代表的就是bytes；python2.x里, b前缀没什么具体意义， 只是为了兼容python3.x的这种写法
+- 删除了一些验证，主要为fields和count的验证
+- 还增加了一个为了适应更广泛pcd格式的解析头代码
+- 除此之外，还有有部分python2到python3相关的其他代码改造
+
+用法：
+
+.. code:: bash
+
+    python3 setup.py bdist_wheel # 生成用于安装的wheel包
+
 What?
 -----
 
