@@ -12,7 +12,7 @@ dimatura@cmu.edu, 2013-2018
 import re
 import struct
 import copy
-import cStringIO as sio
+from io import StringIO as sio # fangchenyu: change format(py2 to py3)
 import numpy as np
 import warnings
 import lzf
@@ -79,9 +79,9 @@ def parse_header(lines):
     """
     metadata = {}
     for ln in lines:
-        if ln.startswith('#') or len(ln) < 2:
+        if ln.startswith(b'#') or len(ln) < 2: # fangchenyu: change '#' to b'#'
             continue
-        match = re.match('(\w+)\s+([\w\s\.]+)', ln)
+        match = re.match('(\w+)\s+([\w\s\.]+)', ln.decode()) # fangchenyu: change ln to ln.decode()
         if not match:
             warnings.warn("warning: can't understand line: %s" % ln)
             continue
@@ -106,6 +106,10 @@ def parse_header(lines):
         metadata['viewpoint'] = [0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0]
     if 'version' not in metadata:
         metadata['version'] = '.7'
+    # fangchenyu: add personalization
+    if metadata['width'] == 0 and metadata['height'] == 0: # 这两个值必须大于0
+        metadata['width'] = metadata['points']
+        metadata['height'] = 1
     return metadata
 
 
@@ -158,8 +162,8 @@ def _metadata_is_consistent(metadata):
             print('%s required' % f)
     checks.append((lambda m: all([k in m for k in required]),
                    'missing field'))
-    checks.append((lambda m: len(m['type']) == len(m['count']) ==
-                   len(m['fields']),
+    # checks.append((lambda m: len(m['type']) == len(m['count']) == # fangchenyu: delete some check
+    checks.append((lambda m: len(m['type']) == len(m['fields']),
                    'length of type, count and fields must be equal'))
     checks.append((lambda m: m['height'] > 0,
                    'height must be greater than 0'))
@@ -207,7 +211,7 @@ def _build_dtype(metadata):
         else:
             fieldnames.extend(['%s_%04d' % (f, i) for i in xrange(c)])
             typenames.extend([np_type]*c)
-    dtype = np.dtype(zip(fieldnames, typenames))
+    dtype = np.dtype(list(zip(fieldnames, typenames))) # fangchenyu: add list modify
     return dtype
 
 
@@ -279,7 +283,7 @@ def point_cloud_from_fileobj(f):
     while True:
         ln = f.readline().strip()
         header.append(ln)
-        if ln.startswith('DATA'):
+        if ln.startswith(b'DATA'): # fangchenyu change '' to b''
             metadata = parse_header(header)
             dtype = _build_dtype(metadata)
             break
@@ -682,7 +686,7 @@ class PointCloud(object):
         assert(_metadata_is_consistent(md))
         assert(len(self.pc_data) == self.points)
         assert(self.width*self.height == self.points)
-        assert(len(self.fields) == len(self.count))
+        # assert(len(self.fields) == len(self.count)) # fangchenyu: delete some check
         assert(len(self.fields) == len(self.type))
 
     def save(self, fname):
